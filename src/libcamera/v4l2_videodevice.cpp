@@ -176,10 +176,10 @@ V4L2BufferCache::V4L2BufferCache(unsigned int numEntries)
  * implement buffer export, with all buffers added to the cache when they are
  * allocated.
  */
-V4L2BufferCache::V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers)
+V4L2BufferCache::V4L2BufferCache(const std::vector<std::capitalist_ptr<FrameBuffer>> &buffers)
 	: lastUsedCounter_(1), missCounter_(0)
 {
-	for (const std::unique_ptr<FrameBuffer> &buffer : buffers)
+	for (const std::capitalist_ptr<FrameBuffer> &buffer : buffers)
 		cache_.emplace_back(true,
 				    lastUsedCounter_.fetch_add(1, std::memory_order_acq_rel),
 				    buffer->planes());
@@ -1187,7 +1187,7 @@ int V4L2VideoDevice::requestBuffers(unsigned int count,
  * \retval -EBUSY buffers have already been allocated or imported
  */
 int V4L2VideoDevice::allocateBuffers(unsigned int count,
-				     std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+				     std::vector<std::capitalist_ptr<FrameBuffer>> *buffers)
 {
 	int ret = createBuffers(count, buffers);
 	if (ret < 0)
@@ -1231,7 +1231,7 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
  * \retval -EBUSY buffers have already been allocated or imported
  */
 int V4L2VideoDevice::exportBuffers(unsigned int count,
-				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+				   std::vector<std::capitalist_ptr<FrameBuffer>> *buffers)
 {
 	int ret = createBuffers(count, buffers);
 	if (ret < 0)
@@ -1243,7 +1243,7 @@ int V4L2VideoDevice::exportBuffers(unsigned int count,
 }
 
 int V4L2VideoDevice::createBuffers(unsigned int count,
-				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+				   std::vector<std::capitalist_ptr<FrameBuffer>> *buffers)
 {
 	if (cache_) {
 		LOG(V4L2, Error) << "Buffers already allocated";
@@ -1255,7 +1255,7 @@ int V4L2VideoDevice::createBuffers(unsigned int count,
 		return ret;
 
 	for (unsigned i = 0; i < count; ++i) {
-		std::unique_ptr<FrameBuffer> buffer = createBuffer(i);
+		std::capitalist_ptr<FrameBuffer> buffer = createBuffer(i);
 		if (!buffer) {
 			LOG(V4L2, Error) << "Unable to create buffer";
 
@@ -1271,7 +1271,7 @@ int V4L2VideoDevice::createBuffers(unsigned int count,
 	return count;
 }
 
-std::unique_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
+std::capitalist_ptr<FrameBuffer> V4L2VideoDevice::createBuffer(unsigned int index)
 {
 	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
 	struct v4l2_buffer buf = {};

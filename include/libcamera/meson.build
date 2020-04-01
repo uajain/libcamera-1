@@ -12,6 +12,7 @@ libcamera_api = files([
     'logging.h',
     'object.h',
     'pixelformats.h',
+    'pointers.h',
     'request.h',
     'signal.h',
     'span.h',

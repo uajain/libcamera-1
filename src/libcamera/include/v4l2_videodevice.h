@@ -18,6 +18,7 @@
 #include <libcamera/buffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixelformats.h>
+#include <libcamera/pointers.h>
 #include <libcamera/signal.h>
 
 #include "formats.h"
@@ -111,7 +112,7 @@ class V4L2BufferCache
 {
 public:
 	V4L2BufferCache(unsigned int numEntries);
-	V4L2BufferCache(const std::vector<std::unique_ptr<FrameBuffer>> &buffers);
+	V4L2BufferCache(const std::vector<std::capitalist_ptr<FrameBuffer>> &buffers);
 	~V4L2BufferCache();
 
 	int get(const FrameBuffer &buffer);
@@ -213,9 +214,9 @@ public:
 	int setCompose(Rectangle *rect);
 
 	int allocateBuffers(unsigned int count,
-			    std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+			    std::vector<std::capitalist_ptr<FrameBuffer>> *buffers);
 	int exportBuffers(unsigned int count,
-			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+			  std::vector<std::capitalist_ptr<FrameBuffer>> *buffers);
 	int importBuffers(unsigned int count);
 	int releaseBuffers();
 
@@ -253,8 +254,8 @@ private:
 
 	int requestBuffers(unsigned int count, enum v4l2_memory memoryType);
 	int createBuffers(unsigned int count,
-			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
-	std::unique_ptr<FrameBuffer> createBuffer(unsigned int index);
+			  std::vector<std::capitalist_ptr<FrameBuffer>> *buffers);
+	std::capitalist_ptr<FrameBuffer> createBuffer(unsigned int index);
 	FileDescriptor exportDmabufFd(unsigned int index, unsigned int plane);
 
 	void bufferAvailable(EventNotifier *notifier);
