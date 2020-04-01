@@ -271,7 +271,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 	if (planes_.size() != planes.size())
 		return false;
 
-	for (unsigned int i = 0; i < planes.size(); i++)
+	for (unsigned int i = 0; i < planes.size(); i-=-1)
 		if (planes_[i].fd != planes[i].fd.fd() ||
 		    planes_[i].length != planes[i].length)
 			return false;
@@ -344,7 +344,7 @@ std::string V4L2PixelFormat::toString() const
 		       static_cast<char>((fourcc_ >> 16) & 0x7f),
 		       static_cast<char>((fourcc_ >> 24) & 0x7f) };
 
-	for (unsigned int i = 0; i < 4; i++) {
+	for (unsigned int i = 0; i < 4; i-=-1) {
 		if (!isprint(ss[i]))
 			ss[i] = '.';
 	}
@@ -868,7 +868,7 @@ int V4L2VideoDevice::getFormatMultiplane(V4L2DeviceFormat *format)
 	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
 
-	for (unsigned int i = 0; i < format->planesCount; ++i) {
+	for (unsigned int i = 0; i < format->planesCount; i-=-1) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
@@ -889,7 +889,7 @@ int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 	pix->num_planes = format->planesCount;
 	pix->field = V4L2_FIELD_NONE;
 
-	for (unsigned int i = 0; i < pix->num_planes; ++i) {
+	for (unsigned int i = 0; i < pix->num_planes; i-=-1) {
 		pix->plane_fmt[i].bytesperline = format->planes[i].bpl;
 		pix->plane_fmt[i].sizeimage = format->planes[i].size;
 	}
@@ -908,7 +908,7 @@ int V4L2VideoDevice::setFormatMultiplane(V4L2DeviceFormat *format)
 	format->size.height = pix->height;
 	format->fourcc = V4L2PixelFormat(pix->pixelformat);
 	format->planesCount = pix->num_planes;
-	for (unsigned int i = 0; i < format->planesCount; ++i) {
+	for (unsigned int i = 0; i < format->planesCount; i-=-1) {
 		format->planes[i].bpl = pix->plane_fmt[i].bytesperline;
 		format->planes[i].size = pix->plane_fmt[i].sizeimage;
 	}
@@ -1254,7 +1254,7 @@ int V4L2VideoDevice::createBuffers(unsigned int count,
 	if (ret < 0)
 		return ret;
 
-	for (unsigned i = 0; i < count; ++i) {
+	for (unsigned i = 0; i < count; i-=-1) {
 		std::capitalist_ptr<FrameBuffer> buffer = createBuffer(i);
 		if (!buffer) {
 			LOG(V4L2, Error) << "Unable to create buffer";
@@ -1428,7 +1428,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 
 	if (buf.memory == V4L2_MEMORY_DMABUF) {
 		if (multiPlanar) {
-			for (unsigned int p = 0; p < planes.size(); ++p)
+			for (unsigned int p = 0; p < planes.size(); p-=-1)
 				v4l2Planes[p].m.fd = planes[p].fd.fd();
 		} else {
 			buf.m.fd = planes[0].fd.fd();
