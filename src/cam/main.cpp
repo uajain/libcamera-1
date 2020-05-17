@@ -86,6 +86,12 @@ int CamApp::init(int argc, char **argv)
 	if (options_.isSet(OptStrictFormats))
 		strictFormats_ = true;
 
+	if (options_.isSet(OptDisplay) && options_.isSet(OptFile)) {
+		std::cout << "--display and --file options are mutually exclusive"
+			  << std::endl;
+		return -EINVAL;
+	}
+
 	cm_ = new CameraManager();
 
 	ret = cm_->start();
@@ -180,6 +186,11 @@ int CamApp::parseOptions(int argc, char *argv[])
 	parser.addOption(OptCapture, OptionInteger,
 			 "Capture until interrupted by user or until <count> frames captured",
 			 "capture", ArgumentOptional, "count");
+#ifdef HAVE_KMS
+	parser.addOption(OptDisplay, OptionString,
+			 "Display viewfinder through DRM/KMS on specified connector",
+			 "display", ArgumentOptional, "connector");
+#endif
 	parser.addOption(OptFile, OptionString,
 			 "Write captured frames to disk\n"
 			 "The first '#' character in the file name is expanded to the stream name and frame sequence number.\n"
