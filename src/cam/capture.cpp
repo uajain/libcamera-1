@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <sstream>
 
+#include "buffer_writer.h"
 #include "capture.h"
 #include "main.h"
 
@@ -18,7 +19,7 @@ using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera, CameraConfiguration *config,
 		 EventLoop *loop, const StreamRoles &roles)
-	: camera_(camera), config_(config), roles_(roles), writer_(nullptr), loop_(loop),
+	: camera_(camera), config_(config), roles_(roles), sink_(nullptr), loop_(loop),
 	  captureCount_(0), captureLimit_(0)
 {
 }
@@ -51,20 +52,28 @@ int Capture::run(const OptionsParser::Options &options)
 
 	if (options.isSet(OptFile)) {
 		if (!options[OptFile].toString().empty())
-			writer_ = new BufferWriter(options[OptFile]);
+			sink_ = new BufferWriter(options[OptFile]);
 		else
-			writer_ = new BufferWriter();
+			sink_ = new BufferWriter();
 	}
 
+	if (sink_) {
+		ret = sink_->configure(*config_);
+		if (ret < 0) {
+			std::cout << "Failed to configure frame sink"
+				  << std::endl;
+			return ret;
+		}
+
+		sink_->bufferReleased.connect(this, &Capture::sinkRelease);
+	}
 
 	FrameBufferAllocator *allocator = new FrameBufferAllocator(camera_);
 
 	ret = capture(allocator);
 
-	if (options.isSet(OptFile)) {
-		delete writer_;
-		writer_ = nullptr;
-	}
+	delete sink_;
+	sink_ = nullptr;
 
 	delete allocator;
 
@@ -114,16 +123,26 @@ int Capture::capture(FrameBufferAllocator *allocator)
 				return ret;
 			}
 
-			if (writer_)
-				writer_->mapBuffer(buffer.get());
+			if (sink_)
+				sink_->mapBuffer(buffer.get());
 		}
 
 		requests.push_back(request);
 	}
 
+	if (sink_) {
+		ret = sink_->start();
+		if (ret) {
+			std::cout << "Failed to start frame sink" << std::endl;
+			return ret;
+		}
+	}
+
 	ret = camera_->start();
 	if (ret) {
 		std::cout << "Failed to start capture" << std::endl;
+		if (sink_)
+			sink_->stop();
 		return ret;
 	}
 
@@ -132,6 +151,8 @@ int Capture::capture(FrameBufferAllocator *allocator)
 		if (ret < 0) {
 			std::cerr << "Can't queue request" << std::endl;
 			camera_->stop();
+			if (sink_)
+				sink_->stop();
 			return ret;
 		}
 	}
@@ -149,6 +170,12 @@ int Capture::capture(FrameBufferAllocator *allocator)
 	if (ret)
 		std::cout << "Failed to stop capture" << std::endl;
 
+	if (sink_) {
+		ret = sink_->stop();
+		if (ret)
+			std::cout << "Failed to stop frame sink" << std::endl;
+	}
+
 	return ret;
 }
 
@@ -165,17 +192,18 @@ void Capture::requestComplete(Request *request)
 	    ? 1000.0 / fps : 0.0;
 	last_ = now;
 
+	bool requeue = true;
+
 	std::stringstream info;
 	info << "fps: " << std::fixed << std::setprecision(2) << fps;
 
 	for (auto it = buffers.begin(); it != buffers.end(); ++it) {
 		Stream *stream = it->first;
 		FrameBuffer *buffer = it->second;
-		const std::string &name = streamName_[stream];
 
 		const FrameMetadata &metadata = buffer->metadata();
 
-		info << " " << name
+		info << " " << streamName_[stream]
 		     << " seq: " << std::setw(6) << std::setfill('0') << metadata.sequence
 		     << " bytesused: ";
 
@@ -186,8 +214,10 @@ void Capture::requestComplete(Request *request)
 				info << "/";
 		}
 
-		if (writer_)
-			writer_->write(buffer, name);
+		if (sink_) {
+			if (!sink_->consumeBuffer(stream, buffer))
+				requeue = false;
+		}
 	}
 
 	std::cout << info.str() << std::endl;
@@ -197,6 +227,13 @@ void Capture::requestComplete(Request *request)
 		loop_->exit(0);
 		return;
 	}
+
+	/*
+	 * If the frame sink holds on the buffer, we'll requeue it later in the
+	 * complete handler.
+	 */
+	if (!requeue)
+		return;
 
 	/*
 	 * Create a new request and populate it with one buffer for each
@@ -214,6 +251,19 @@ void Capture::requestComplete(Request *request)
 
 		request->addBuffer(stream, buffer);
 	}
+
+	camera_->queueRequest(request);
+}
+
+void Capture::sinkRelease(libcamera::FrameBuffer *buffer)
+{
+	Request *request = camera_->createRequest();
+	if (!request) {
+		std::cerr << "Can't create request" << std::endl;
+		return;
+	}
+
+	request->addBuffer(config_->at(0).stream(), buffer);
 
 	camera_->queueRequest(request);
 }
