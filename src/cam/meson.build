@@ -25,6 +25,7 @@ endif
 libjpeg = dependency('libjpeg')
 cam_sources += files([
     '../android/jpeg/encoder_libjpeg.cpp',
+    'file_sink_compressor.cpp',
 ])
 
 cam_dependencies = [
