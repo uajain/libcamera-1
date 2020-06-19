@@ -13,6 +13,7 @@
 
 #include "capture.h"
 #include "file_sink.h"
+#include "file_sink_compressor.h"
 #ifdef HAVE_KMS
 #include "kms_sink.h"
 #endif
@@ -73,9 +74,9 @@ int Capture::run(const OptionsParser::Options &options)
 
 	if (options.isSet(OptFile)) {
 		if (!options[OptFile].toString().empty())
-			sink_ = new FileSink(options[OptFile]);
+			sink_ = new FileSinkCompressor(options[OptFile]);
 		else
-			sink_ = new FileSink();
+			sink_ = new FileSinkCompressor();
 	}
 
 	if (sink_) {
