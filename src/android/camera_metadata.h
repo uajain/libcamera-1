@@ -9,6 +9,7 @@
 
 #include <stdint.h>
 #include <string>
+#include <vector>
 
 #include <system/camera_metadata.h>
 
@@ -22,6 +23,8 @@ public:
 	bool addEntry(uint32_t tag, const void *data, size_t data_count);
 	bool updateEntry(uint32_t tag, const void *data, size_t data_count);
 
+	const std::vector<int32_t> &tags() { return tags_; }
+
 	camera_metadata_t *get();
 	const camera_metadata_t *get() const;
 
@@ -32,6 +35,7 @@ public:
 
 private:
 	camera_metadata_t *metadata_;
+	std::vector<int32_t> tags_;
 	bool valid_;
 
 	size_t entryCapacity_;

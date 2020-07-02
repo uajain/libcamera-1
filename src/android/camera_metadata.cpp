@@ -33,6 +33,7 @@ bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count)
 		return false;
 
 	if (!add_camera_metadata_entry(metadata_, tag, data, count)) {
+		tags_.push_back(tag);
 		entries_++;
 		size_ += count;
 		return true;
