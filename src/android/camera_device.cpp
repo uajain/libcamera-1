@@ -16,6 +16,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
 
+#include "libcamera/internal/file.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
 #include "libcamera/internal/utils.h"
@@ -1327,6 +1328,22 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	return 0;
 }
 
+static std::string datetime()
+{
+	time_t rawtime;
+	struct tm *timeinfo;
+	char buffer[80];
+	static unsigned int milliseconds = 0;
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer, 80, "%d-%m-%Y.%H-%M-%S.", timeinfo);
+
+	/* millisencods is just a fast hack to ensure unique filenames */
+	return std::string(buffer) + std::to_string(milliseconds++);
+}
+
 void CameraDevice::requestComplete(Request *request)
 {
 	const std::map<Stream *, FrameBuffer *> &buffers = request->buffers();
@@ -1390,6 +1407,17 @@ void CameraDevice::requestComplete(Request *request)
 			LOG(HAL, Error) << "Failed to encode stream image";
 			status = CAMERA3_BUFFER_STATUS_ERROR;
 			continue;
+		}
+
+		LOG(HAL, Info) << "Compress returned " << jpeg_size << " bytes";
+
+		{
+			File file("/tmp/" + datetime() + ".jpg");
+			int ret = file.open(File::WriteOnly);
+			LOG(HAL, Info) << "JPEG open returned  " << ret << " " << strerror(-file.error());
+
+			ret = file.write({ mapped.maps()[0].data(), static_cast<size_t>(jpeg_size) });
+			LOG(HAL, Info) << "JPEG Write returned  " << ret << " bytes";
 		}
 
 		/*
