@@ -184,6 +184,7 @@ void EncoderLibJpeg::compressNV(const libcamera::MappedBuffer *frame)
 int EncoderLibJpeg::encode(const FrameBuffer *source,
 			   const libcamera::Span<uint8_t> &dest)
 {
+	int ret = 0;
 	MappedFrameBuffer frame(source, PROT_READ);
 	if (!frame.isValid()) {
 		LOG(JPEG, Error) << "Failed to map FrameBuffer : "
@@ -219,6 +220,12 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 	 */
 	jpeg_mem_dest(&compress_, &destination, &size);
 
+	if(setjmp(jerr_.setjmp_buffer)) {
+		/* If we get here, the JPEG code has signaled an error. */
+		ret = -1;
+		goto error;
+	}
+
 	jpeg_start_compress(&compress_, TRUE);
 
 	if (exif.size()) {
@@ -236,6 +243,7 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 	else
 		compressRGB(&frame);
 
+error:
 	jpeg_finish_compress(&compress_);
 
 	return size;

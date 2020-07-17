@@ -30,6 +30,7 @@ private:
 
 	struct jpeg_compress_struct compress_;
 	struct jpeg_error_mgr jerr_;
+	char jpegLastErrorMsg[JMSG_LENGTH_MAX];
 
 	unsigned int quality_;
 
