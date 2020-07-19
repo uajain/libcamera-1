@@ -22,7 +22,19 @@ cam_sources += files([
 ])
 endif
 
+libjpeg = dependency('libjpeg')
+cam_sources += files([
+    '../android/jpeg/encoder_libjpeg.cpp',
+])
+
+cam_dependencies = [
+  libatomic,
+  libcamera_dep,
+  libdrm,
+  libjpeg,
+]
+
 cam  = executable('cam', cam_sources,
-                  dependencies : [ libatomic, libcamera_dep, libdrm ],
+                  dependencies : cam_dependencies,
                   cpp_args : cam_cpp_args,
                   install : true)
