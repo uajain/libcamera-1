@@ -8,6 +8,8 @@ android_hal_sources = files([
     'camera_ops.cpp',
     'jpeg/encoder_libjpeg.cpp',
     'jpeg/exif.cpp',
+    'vendor_tag.cc',
+    'vendor_tag_manager.cc',
 ])
 
 android_camera_metadata_sources = files([

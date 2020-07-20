@@ -11,6 +11,7 @@
 
 #include "camera_device.h"
 #include "camera_hal_manager.h"
+#include "vendor_tag.h"
 
 using namespace libcamera;
 
@@ -62,6 +63,14 @@ static int hal_init()
 	return 0;
 }
 
+static void get_vendor_tag_ops(vendor_tag_ops_t* ops) {
+	ops->get_all_tags = cros::VendorTagOps::GetAllTags;
+	ops->get_tag_count = cros::VendorTagOps::GetTagCount;
+	ops->get_section_name = cros::VendorTagOps::GetSectionName;
+	ops->get_tag_name = cros::VendorTagOps::GetTagName;
+	ops->get_tag_type = cros::VendorTagOps::GetTagType;
+}
+
 /*------------------------------------------------------------------------------
  * Android Camera Device
  */
@@ -104,7 +113,7 @@ camera_module_t HAL_MODULE_INFO_SYM = {
 	.get_number_of_cameras = hal_get_number_of_cameras,
 	.get_camera_info = hal_get_camera_info,
 	.set_callbacks = hal_set_callbacks,
-	.get_vendor_tag_ops = nullptr,
+	.get_vendor_tag_ops = get_vendor_tag_ops,
 	.open_legacy = hal_open_legacy,
 	.set_torch_mode = hal_set_torch_mode,
 	.init = hal_init,
