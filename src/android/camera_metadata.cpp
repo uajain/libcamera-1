@@ -14,6 +14,8 @@ using namespace libcamera;
 LOG_DEFINE_CATEGORY(CameraMetadata);
 
 CameraMetadata::CameraMetadata(size_t entryCapacity, size_t dataCapacity)
+	: entryCapacity_(entryCapacity), dataCapacity_(dataCapacity),
+	  entries_(0), size_(0)
 {
 	metadata_ = allocate_camera_metadata(entryCapacity, dataCapacity);
 	valid_ = metadata_ != nullptr;
@@ -30,8 +32,11 @@ bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count)
 	if (!valid_)
 		return false;
 
-	if (!add_camera_metadata_entry(metadata_, tag, data, count))
+	if (!add_camera_metadata_entry(metadata_, tag, data, count)) {
+		entries_++;
+		size_ += count;
 		return true;
+	}
 
 	const char *name = get_camera_metadata_tag_name(tag);
 	if (name)
@@ -81,4 +86,14 @@ camera_metadata_t *CameraMetadata::get()
 const camera_metadata_t *CameraMetadata::get() const
 {
 	return valid_ ? metadata_ : nullptr;
+}
+
+std::string CameraMetadata::usage() const
+{
+	std::ostringstream os;
+
+	os << "Entries: " << entries_ << "/" << entryCapacity_
+	   << " Size: " << size_ << "/" << dataCapacity_;
+
+	return os.str();
 }

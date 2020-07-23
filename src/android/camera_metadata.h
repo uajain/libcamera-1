@@ -8,6 +8,7 @@
 #define __ANDROID_CAMERA_METADATA_H__
 
 #include <stdint.h>
+#include <string>
 
 #include <system/camera_metadata.h>
 
@@ -24,9 +25,20 @@ public:
 	camera_metadata_t *get();
 	const camera_metadata_t *get() const;
 
+	size_t entries() const { return entries_; }
+	size_t size() const { return size_; };
+
+	std::string usage() const;
+
 private:
 	camera_metadata_t *metadata_;
 	bool valid_;
+
+	size_t entryCapacity_;
+	size_t dataCapacity_;
+
+	size_t entries_;
+	size_t size_;
 };
 
 #endif /* __ANDROID_CAMERA_METADATA_H__ */
