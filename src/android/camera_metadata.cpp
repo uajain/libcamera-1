@@ -32,6 +32,16 @@ bool CameraMetadata::addEntry(uint32_t tag, const void *data, size_t count)
 	if (!valid_)
 		return false;
 
+	if (entries_ >= entryCapacity_) {
+		LOG(CameraMetadata, Error) << "Failed to add tag - Entries overflow: "
+					   << entries_ << " >= " << entryCapacity_;
+	}
+
+	if (size_ + count > dataCapacity_) {
+		LOG(CameraMetadata, Error) << "Failed to add entry - Data overflow: "
+					   << size_ << " + " << count << " > " << dataCapacity_;
+	}
+
 	if (!add_camera_metadata_entry(metadata_, tag, data, count)) {
 		tags_.push_back(tag);
 		entries_++;
