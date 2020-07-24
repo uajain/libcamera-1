@@ -23,6 +23,8 @@
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/log.h"
 
+#include "exif.h"
+
 using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(JPEG)
@@ -189,6 +191,21 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 		return frame.error();
 	}
 
+	Exif exif;
+
+	exif.setMake("Libcamera");
+	exif.setModel("Camera");
+
+	exif.setShort(EXIF_IFD_0, EXIF_TAG_IMAGE_WIDTH, compress_.image_width);
+	exif.setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_X_DIMENSION, compress_.image_width);
+
+	exif.setShort(EXIF_IFD_0, EXIF_TAG_IMAGE_LENGTH, compress_.image_height);
+	exif.setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_Y_DIMENSION, compress_.image_height);
+
+	exif.setShort(EXIF_IFD_0, EXIF_TAG_ORIENTATION, 1 /* default upright */);
+
+	Span<uint8_t> exif_data = exif.generate();
+
 	unsigned char *destination = dest.data();
 	unsigned long size = dest.size();
 
@@ -203,6 +220,13 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 	jpeg_mem_dest(&compress_, &destination, &size);
 
 	jpeg_start_compress(&compress_, TRUE);
+
+	if (exif.size()) {
+		/* Store Exif data in the JPEG_APP1 data block. */
+		jpeg_write_marker(&compress_, JPEG_APP0 + 1,
+				  static_cast<const JOCTET *>(exif_data.data()),
+				  exif_data.size());
+	}
 
 	LOG(JPEG, Debug) << "JPEG Encode Starting:" << compress_.image_width
 			 << "x" << compress_.image_height;
