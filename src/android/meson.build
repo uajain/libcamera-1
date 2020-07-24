@@ -7,6 +7,7 @@ android_hal_sources = files([
     'camera_metadata.cpp',
     'camera_ops.cpp',
     'jpeg/encoder_libjpeg.cpp',
+    'jpeg/exif.cpp',
 ])
 
 android_camera_metadata_sources = files([
@@ -15,6 +16,7 @@ android_camera_metadata_sources = files([
 
 android_deps = [
     dependency('libjpeg'),
+    dependency('libexif'),
 ]
 
 android_camera_metadata = static_library('camera_metadata',
