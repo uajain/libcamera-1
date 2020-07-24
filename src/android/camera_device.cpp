@@ -930,6 +930,8 @@ const camera_metadata_t *CameraDevice::getStaticMetadata()
 				  availableResultKeys.data(),
 				  availableResultKeys.size());
 
+	LOG(HAL, Debug) << "StaticMetadata usage: " << staticMetadata_->usage();
+
 	if (!staticMetadata_->isValid()) {
 		LOG(HAL, Error) << "Failed to construct static metadata";
 		delete staticMetadata_;
@@ -1020,6 +1022,8 @@ CameraMetadata *CameraDevice::requestTemplatePreview()
 	uint8_t captureIntent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
 	requestTemplate->addEntry(ANDROID_CONTROL_CAPTURE_INTENT,
 				  &captureIntent, 1);
+
+	LOG(HAL, Debug) << "requestTemplate usage: " << requestTemplate->usage();
 
 	return requestTemplate;
 }
@@ -1598,6 +1602,8 @@ std::unique_ptr<CameraMetadata> CameraDevice::getResultMetadata(int frame_number
 	const uint8_t scene_flicker = ANDROID_STATISTICS_SCENE_FLICKER_NONE;
 	resultMetadata->addEntry(ANDROID_STATISTICS_SCENE_FLICKER,
 				 &scene_flicker, 1);
+
+	LOG(HAL, Debug) << "resultMetadata usage: " << resultMetadata->usage();
 
 	/*
 	 * Return the result metadata pack even is not valid: get() will return
