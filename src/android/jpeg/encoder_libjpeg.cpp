@@ -43,6 +43,13 @@ const std::map<PixelFormat, JPEGPixelFormatInfo> pixelInfo{
 	{ formats::RGB888, { JCS_EXT_BGR, PixelFormatInfo::info(formats::RGB888), false } },
 	{ formats::BGR888, { JCS_EXT_RGB, PixelFormatInfo::info(formats::BGR888), false } },
 
+	/* YUV packed formats. */
+	{ formats::UYVY, { JCS_YCbCr, PixelFormatInfo::info(formats::UYVY), false } },
+	{ formats::VYUY, { JCS_YCbCr, PixelFormatInfo::info(formats::VYUY), false } },
+	{ formats::YUYV, { JCS_YCbCr, PixelFormatInfo::info(formats::YUYV), false } },
+	{ formats::YVYU, { JCS_YCbCr, PixelFormatInfo::info(formats::YVYU), false } },
+
+	/* YUY planar formats. */
 	{ formats::NV12, { JCS_YCbCr, PixelFormatInfo::info(formats::NV12), false } },
 	{ formats::NV21, { JCS_YCbCr, PixelFormatInfo::info(formats::NV21), true } },
 	{ formats::NV16, { JCS_YCbCr, PixelFormatInfo::info(formats::NV16), false } },
@@ -116,6 +123,35 @@ void EncoderLibJpeg::compressRGB(const libcamera::MappedBuffer *frame)
 
 	while (compress_.next_scanline < compress_.image_height) {
 		row_pointer[0] = &src[compress_.next_scanline * stride];
+		jpeg_write_scanlines(&compress_, row_pointer, 1);
+	}
+}
+
+/*
+ * A very dull implementation to compress YUYV.
+ * To be converted to a generic algorithm akin to NV12.
+ * If it can be shared with NV12 great, but we might be able to further
+ * optimisze the NV layouts by only depacking the CrCb pixels.
+ */
+void EncoderLibJpeg::compressYUV(const libcamera::MappedBuffer *frame)
+{
+	std::vector<uint8_t> tmprowbuf(compress_.image_width * 3);
+	unsigned char *input = static_cast<unsigned char *>(frame->maps()[0].data());
+	unsigned int stride = pixelFormatInfo_->stride(compress_.image_width, 0);
+
+	JSAMPROW row_pointer[1];
+	row_pointer[0] = &tmprowbuf[0];
+	while (compress_.next_scanline < compress_.image_height) {
+		unsigned i, j;
+		unsigned offset = compress_.next_scanline * stride; //compress_.image_width * 2; //offset to the correct row
+		for (i = 0, j = 0; i < compress_.image_width * 2; i += 4, j += 6) { //input strides by 4 bytes, output strides by 6 (2 pixels)
+			tmprowbuf[j + 0] = input[offset + i + 0]; // Y (unique to this pixel)
+			tmprowbuf[j + 1] = input[offset + i + 1]; // U (shared between pixels)
+			tmprowbuf[j + 2] = input[offset + i + 3]; // V (shared between pixels)
+			tmprowbuf[j + 3] = input[offset + i + 2]; // Y (unique to this pixel)
+			tmprowbuf[j + 4] = input[offset + i + 1]; // U (shared between pixels)
+			tmprowbuf[j + 5] = input[offset + i + 3]; // V (shared between pixels)
+		}
 		jpeg_write_scanlines(&compress_, row_pointer, 1);
 	}
 }
@@ -233,6 +269,8 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 
 	if (nv_)
 		compressNV(&frame);
+	else if (compress_.in_color_space == JCS_YCbCr)
+		compressYUV(&frame);
 	else
 		compressRGB(&frame);
 

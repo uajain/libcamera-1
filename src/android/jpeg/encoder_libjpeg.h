@@ -26,6 +26,7 @@ public:
 
 private:
 	void compressRGB(const libcamera::MappedBuffer *frame);
+	void compressYUV(const libcamera::MappedBuffer *frame);
 	void compressNV(const libcamera::MappedBuffer *frame);
 
 	struct jpeg_compress_struct compress_;
