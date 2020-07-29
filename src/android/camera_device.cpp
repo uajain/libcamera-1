@@ -1439,6 +1439,12 @@ void CameraDevice::requestComplete(Request *request)
 		blob->jpeg_blob_id = CAMERA3_JPEG_BLOB_ID;
 		blob->jpeg_size = jpeg_size;
 
+		LOG(HAL, Info) << "Calculate blob offset : max-size = " << maxJpegBufferSize_;
+		LOG(HAL, Info) << "Calculate blob offset : length = " << mapped.maps()[0].size();
+		LOG(HAL, Info) << "Sizeof(struct camera3_jpeg_blob : " << sizeof(struct camera3_jpeg_blob);
+
+		LOG(HAL, Info) << "blob: " << blob;
+
 		/* Update the JPEG result Metadata. */
 		resultMetadata->addEntry(ANDROID_JPEG_SIZE,
 					 &jpeg_size, 1);
