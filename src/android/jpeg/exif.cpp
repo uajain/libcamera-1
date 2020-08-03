@@ -30,6 +30,8 @@ LOG_DEFINE_CATEGORY(EXIF)
 #define EXIF_TAG_EXIF_IFD_POINTER               0x8769
 #define EXIF_TAG_GPS_IFD_POINTER                0x8825
 
+https://partnerissuetracker.corp.google.com/u/2/issues/161540086
+
 # Exif tags we set for USB HAL:
 SET_SHORT(EXIF_IFD_0, EXIF_TAG_IMAGE_WIDTH, width);
 SET_LONG(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_X_DIMENSION, width);
