@@ -29,7 +29,6 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(JPEG)
 
-
 /*
 https://github.com/zakinster/detiq-t/blob/master/ImageIn/JpgImage.cpp
 https://sourceforge.net/p/libjpeg/mailman/message/30815123/
@@ -152,6 +151,17 @@ EncoderLibJpeg::~EncoderLibJpeg()
 
 int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 {
+	{
+		LOG(JPEG, Warning) << "Configuring pixelformat as : "
+				   << cfg.pixelFormat.toString();
+		LOG(JPEG, Warning) << "  : " << cfg.toString();
+
+		std::vector<PixelFormat> formats = cfg.formats().pixelformats();
+		LOG(JPEG, Warning) << "StreamConfiguration supports " << formats.size() << " formats:";
+		for (const PixelFormat &format : formats)
+			LOG(JPEG, Warning) << " - " << format.toString();
+	}
+
 	const struct JPEGPixelFormatInfo info = findPixelInfo(cfg.pixelFormat);
 	if (info.colorSpace == JCS_UNKNOWN)
 		return -ENOTSUP;
@@ -287,10 +297,21 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 		return frame.error();
 	}
 
+	/*
+	SET_RATIONAL(EXIF_IFD_EXIF, EXIF_TAG_FOCAL_LENGTH, numerator, denominator);
+	SET_RATIONAL(EXIF_IFD_EXIF, EXIF_TAG_FNUMBER, numerator, denominator);
+	SET_SHORT(EXIF_IFD_EXIF, EXIF_TAG_FLASH, flash);
+	SET_SHORT(EXIF_IFD_EXIF, EXIF_TAG_WHITE_BALANCE, white_balance);
+	SET_SHORT(EXIF_IFD_EXIF, EXIF_TAG_EXPOSURE_MODE, exposure_mode);
+	SET_RATIONAL(EXIF_IFD_EXIF, EXIF_TAG_EXPOSURE_TIME, numerator, denominator);
+	SET_STRING(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME, EXIF_FORMAT_ASCII, subsec_time);
+	SET_STRING(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME_ORIGINAL, EXIF_FORMAT_ASCII, subsec_time);
+	SET_STRING(EXIF_IFD_EXIF, EXIF_TAG_SUB_SEC_TIME_DIGITIZED, EXIF_FORMAT_ASCII, subsec_time);
+	*/
 	Exif exif;
 
 	exif.setMake("Libcamera");
-	exif.setModel("Camera");
+	exif.setModel("Kierans Camera");
 
 	exif.setShort(EXIF_IFD_0, EXIF_TAG_IMAGE_WIDTH, compress_.image_width);
 	exif.setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_X_DIMENSION, compress_.image_width);
@@ -299,6 +320,11 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 	exif.setLong(EXIF_IFD_EXIF, EXIF_TAG_PIXEL_Y_DIMENSION, compress_.image_height);
 
 	exif.setShort(EXIF_IFD_0, EXIF_TAG_ORIENTATION, 1 /* default upright */);
+
+	std::string now("Tue 28 Jul 14:35:47 BST 2020");
+	exif.setString(EXIF_IFD_0, EXIF_TAG_DATE_TIME, EXIF_FORMAT_ASCII, now);
+	exif.setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_ORIGINAL, EXIF_FORMAT_ASCII, now);
+	exif.setString(EXIF_IFD_EXIF, EXIF_TAG_DATE_TIME_DIGITIZED, EXIF_FORMAT_ASCII, now);
 
 	Span<uint8_t> exif_data = exif.generate();
 
@@ -335,6 +361,14 @@ int EncoderLibJpeg::encode(const FrameBuffer *source,
 		compressRGB(&frame);
 
 	jpeg_finish_compress(&compress_);
+
+	LOG(JPEG, Error) << "JPEG Compress Input size " << dest.size()
+			 << " output size: " << size;
+
+	if (destination != dest.data()) {
+		LOG(JPEG, Error) << "JPEG REALLOCATED MEMORY "
+				 << destination << " != " << dest.data();
+	}
 
 	return size;
 }
