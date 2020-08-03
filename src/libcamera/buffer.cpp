@@ -351,6 +351,7 @@ MappedBuffer &MappedBuffer::operator=(MappedBuffer &&other)
 
 MappedBuffer::~MappedBuffer()
 {
+	LOG(Buffer, Debug) << "Destroying and unmapping a MappedBuffer";
 	for (Plane &map : maps_)
 		munmap(map.data(), map.size());
 }
