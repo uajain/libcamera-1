@@ -364,6 +364,9 @@ int CameraDevice::initializeStreamConfigurations()
 		PixelFormat mappedFormat;
 		for (const PixelFormat &pixelFormat : libcameraFormats) {
 			/* \todo Fixed mapping for JPEG. */
+
+			/* Look here */
+
 			if (androidFormat == HAL_PIXEL_FORMAT_BLOB) {
 				mappedFormat = formats::MJPEG;
 				break;
